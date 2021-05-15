@@ -1,2 +1,7 @@
-/prj
+/prj/db
+/prj/incremental_db
+/prj/simulation
+/prj/output_files
 .o
+.bak
+/.git
