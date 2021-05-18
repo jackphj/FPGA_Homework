@@ -2,7 +2,7 @@
 
 module elevator_input(clk,outsideUp,outsideDown,insideFloor,queueUp,queueDown,queueinside);	//电梯输入处理，假定电梯上下键上下都为开关按键，且按下时为高电平,clk=200MHz
 
-parameter floor = 4;
+parameter floor = 6;
 
 /****输入输出定义****/
 input clk;															//电梯基准时钟
@@ -144,7 +144,7 @@ always @(clk) begin
 	end
 	else if(times_outsideUp == 0 && flag_outsideUp == 1'b1) begin	//延时结束，得到变化的电平0->1 即为请求楼层
 		flag_outsideUp = 1'b0;
-		outsideUp_queue[3]<= outsideUp_queue[2] ^ outsideUp;
+		outsideUp_queue[3]<= outsideUp_queue[2] ^ outsideUp | outsideUp_queue[3];
 	end
 	else outsideUp_queue[2] <=  outsideUp;						//若没有任何操作，一直保存刷新实时值
 	
@@ -158,7 +158,7 @@ always @(clk) begin
 	end
 	else if(times_outsideUp == 0 && flag_outsideDown == 1'b1) begin	//延时结束，得到变化的电平0->1 即为请求楼层
 		flag_outsideDown <= 1'b0;
-		outsideDown_queue[3] <= outsideDown_queue[2] ^ outsideUp;
+		outsideDown_queue[3] <= outsideDown_queue[2] ^ outsideUp | outsideDown_queue[3];
 	end
 	else outsideDown_queue[2] <=  outsideUp;						//若没有任何操作，一直保存刷新实时值
 	
@@ -172,7 +172,7 @@ always @(clk) begin
 	end
 	else if(times_outsideUp == 0 && flag_insideFloor == 1'b1) begin	//延时结束，得到变化的电平0->1 即为请求楼层
 		flag_insideFloor <= 1'b0;
-		outsideDown_queue[3] <= insideFloor_queue[2] ^ outsideUp;
+		outsideDown_queue[3] <= insideFloor_queue[2] ^ outsideUp | outsideDown_queue[3];
 	end
 	else insideFloor_queue[2] <=  outsideUp;						//若没有任何操作，一直保存刷新实时值
 	
