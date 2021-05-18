@@ -13,7 +13,7 @@ initial begin
 end
 
 always @(clk) begin
-	if(times < 32'd16 && flag == 1'b0) begin  //产生1Hz信号 占空比80%
+	if(times < 32'd16 && flag == 1'b0) begin  //产生1Hz信号 占空比80% 测试使用16 实际应为160000000
 		times <= times + 32'd1;
 	end
 	else if(times == 32'd16 && flag == 1'b0) begin
@@ -21,7 +21,7 @@ always @(clk) begin
 		clock <= 1'b0;
 		flag <= 1'b1;
 	end
-	else if(times < 32'd4 && flag == 1'b1) begin  
+	else if(times < 32'd4 && flag == 1'b1) begin  		//测试使用4 实际应为40000000
 		times <= times + 32'd1;
 	end
 	else if(times == 32'd4 && flag == 1'b1) begin

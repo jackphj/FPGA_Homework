@@ -1,3 +1,5 @@
+/***中控，控制上下行和开关门和***/
+
 module elevator_control(clock,clk,queueUp,queueDown,queueinside,currentFloor,queueUp_new,queueDown_new,queueinside_new);		//clk=1Hz
 
 parameter floor = 6;
@@ -24,6 +26,8 @@ reg flag_dir;
 reg reset;
 reg reseted;
 
+output [floor-1 :0] door;
+
 initial begin
 	Floor = 1'd1;  //初始状态在1楼
 	times = 32'd0;
@@ -49,7 +53,7 @@ always @(clock) begin
 		status[0] <= status[1];
 		$display("clock |||");
 	end
-	else begin
+	else begin						//检测下一个状态以得到楼层，每次运动1层
 		$display("clock ...");
 		if(status[1] == 1'd0)
 			Floor = Floor;	
@@ -61,9 +65,9 @@ always @(clock) begin
 			$display("error");
 		reset <= 1'd1;
 		
-		$display("floor:%d",Floor);
+		$display("floor:%d",Floor);			//楼层显示
 		
-		if(Floor == 1) temp_floor = 6'b000001;
+		if(Floor == 1) temp_floor = 6'b000001;			//我也不知道为什么不能用1'd1:和case，用了仿真老出错，还是if稳定
 		else if(Floor == 2) temp_floor = 6'b000010;
 		else if(Floor == 3) temp_floor = 6'b000100;
 		else if(Floor == 4) temp_floor = 6'b001000;
@@ -71,20 +75,21 @@ always @(clock) begin
 		else if(Floor == 6) temp_floor = 6'b100000;
 
 		$display("temp floor:%b",temp_floor);
-		if(temp_floor & (queueUp | queueDown | queueinside)) begin
+		if(temp_floor & (queueUp | queueDown | queueinside)) begin	//将当前楼层与所有请求队列与操作检测是否需要开门
 			$display("111111");
 			openDoor <= 1'b1;
-			if(status[0] == 1'd0) begin
+			elevator_openDoor D(clock,currentFloor,door);
+			if(status[0] == 1'd0) begin										//清空队列中当前开门的楼层
 				queueDown_new <= queueDown ^ temp_floor & queueDown;
 				queueUp_new <= queueUp ^ temp_floor & queueUp;
 				queueinside_new <= queueinside ^ temp_floor & queueinside;
 				
 			end
-			else if(status[0] == 1'd1) begin
+			else if(status[0] == 1'd1) begin									//清空队列中当前开门的楼层
 				queueUp_new <= queueUp ^ temp_floor & queueUp;
 				queueinside_new <= queueinside ^ temp_floor & queueinside;
 			end
-			else if(status[0] == 1'd2) begin
+			else if(status[0] == 1'd2) begin									//清空队列中当前开门的楼层
 				queueDown_new <= queueDown ^ temp_floor & queueDown;
 				queueinside_new <= queueinside ^ temp_floor & queueinside;
 			end
@@ -92,7 +97,7 @@ always @(clock) begin
 		else begin
 			openDoor <= 1'b0;
 		end	
-		$display("queueUp_new:%b",queueUp_new);
+		//$display("queueUp_new:%b",queueUp_new);//调试
 	end
 end
 
@@ -117,36 +122,36 @@ always @(clk) begin
 
 	end
 	
-	$display("temp_queueUp:%b",temp_queueUp);
+	//$display("temp_queueUp:%b",temp_queueUp);//调试
 	
-	if(status[0] == 1'd0 || status[0] ==1'd1) begin
-		if (temp_queueUp || temp_queueDown || temp_queueinside) begin
+	if(status[0] == 1'd0 || status[0] ==1'd1) begin					//遍历请求序列，优先向上且保持运动反向，同时先检测最近的楼层
+		if (temp_queueUp || temp_queueDown || temp_queueinside) begin		//遇到有请求设置运动方向
 			case(flag_dir)
-				0: status[1] = 1'd0;
+				0: status[1] = 1'd0;			//这里case好像不会出问题
 				1: status[1] = 1'd1;
 				2: status[1] = 1'd2;
 			endcase
-			$display("status:%d",status[1]);
+			//$display("status:%d",status[1]);//调试
 		end
-		else if(temp < 6'b100000 && reseted == 1'b0) begin
+		else if(temp < 6'b100000 && reseted == 1'b0) begin		
 			temp = temp << 1;
 			flag_dir <= 1'd1;
-			$display("0:1 %b",temp);
+			//$display("0:1 %b",temp);//调试
 		end
 		else if(temp == 6'b100000 && reseted == 1'b0) begin
 			reset <= 1'd1;
 			reseted = 1'b1;
-			$display("0:2 %b",temp);
+			//$display("0:2 %b",temp);//调试
 		end
 		else if(temp > 6'd000001 && reseted == 1'b1) begin
 			temp = temp >> 1;
 			flag_dir <= 1'd2;
-			$display("0:3 %b",temp);
+			//$display("0:3 %b",temp);//调试
 		end
 		else if(temp == 6'd000001 && reseted == 1'b1) begin
 			reset <= 1'd1;
 			reseted = 1'b0;
-			$display("0:4 %b",temp);
+			//$display("0:4 %b",temp);//调试
 		end
 	end
 	
@@ -161,17 +166,17 @@ always @(clk) begin
 		else if(temp > 6'd000001 && reseted == 1'b0) begin
 			temp = temp >> 1;
 			flag_dir <= 1'd2;
-			//$display("1:1 %b",temp);
+			//$display("1:1 %b",temp);//调试
 		end
 		else if(temp == 6'd000001 && reseted == 1'b0) begin
 			reset <= 1'd1;
 			reseted = 1'b1;
-			//$display("1:2 %b",temp);
+			//$display("1:2 %b",temp);//调试
 		end
 		else if(temp > 6'd100000 && reseted == 1'b1) begin
 			temp = temp << 1;
 			flag_dir <= 1'd1;
-			//$display("1:3 %b",temp);
+			//$display("1:3 %b",temp);//调试
 		end
 		else if(temp == 6'd100000 && reseted == 1'b1) begin
 			reset <= 1'd1;
